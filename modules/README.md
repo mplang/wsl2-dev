@@ -31,7 +31,7 @@ between markers:
 | tmux | a marked `source-file` line at the top of `~/.tmux.conf` (and one at the end for plugins) |
 | vim | a marked `source` line at the top of `~/.vimrc` |
 | git | a marked `[include]` at the top of `~/.gitconfig` |
-| direnv | a marked `source_env` line in `~/.config/direnv/direnvrc` |
+| direnv | a file in `~/.config/direnv/lib/` (direnv loads them all) |
 
 Hooks at the **top** of a file (oh-my-zsh, tmux, vim, git) load the module
 first, so your own settings below them win.
