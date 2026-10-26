@@ -196,6 +196,7 @@ remove_hook() {
     [[ -e $file ]] && grep -qxF "$comment >>> $TAG >>>" "$file" || return 0
     rest=$(_strip_block "$file" "$comment")
     while [[ $rest == *$'\n' ]]; do rest=${rest%$'\n'}; done
+    while [[ $rest == $'\n'* ]]; do rest=${rest#$'\n'}; done   # a block at the top
     step "remove the $TAG block from $(pretty "$file")" _write "$file" "$rest"
 }
 

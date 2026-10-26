@@ -27,6 +27,7 @@ they're put together.
 | [`zsh`](modules/zsh/) | zsh with large shared history, autosuggestions, better completion and keys; works with or without a framework |
 | [`oh-my-zsh`](modules/oh-my-zsh/) | oh-my-zsh with a small plugin set, your own `local.zsh`, and optionally powerlevel10k |
 | [`fzf`](modules/fzf/) | Fuzzy search for files (Ctrl-T), history (Ctrl-R) and directories (Alt-C) with previews; fzf-tab completion menus in zsh |
+| [`git`](modules/git/) | WSL-friendly git settings (LF line endings, `zdiff3` conflicts, rebasing pulls, ...), VS Code as diff/merge tool, Windows' Git Credential Manager for HTTPS |
 
 Planned, one at a time:
 
@@ -35,7 +36,6 @@ Planned, one at a time:
 | `tmux` | A tmux config: `Ctrl-Space` prefix, mouse, clipboard to Windows (OSC 52), plugins via TPM, status bar |
 | `vim` | A vim config and plugin set (vim-plug) |
 | `vim-coc` | Language-server completion in vim with CoC (needs `vim` and node) |
-| `git` | WSL-friendly git settings: line endings, `zdiff3` conflicts, VS Code as diff and merge tool |
 | `python-uv` | Python projects with uv; direnv activates each project's `.venv` |
 | `node-nvm` | Node versions per project with nvm; direnv switches them |
 | `theme` | One command to switch the color theme of Windows Terminal, Windows' accent, the shell, tmux, vim and fzf (Gruvbox, Tomorrow Night, Modus Vivendi) |
