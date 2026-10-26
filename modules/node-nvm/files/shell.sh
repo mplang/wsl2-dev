@@ -3,10 +3,15 @@
 export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
 
 if [ -s "$NVM_DIR/nvm.sh" ]; then
-    # The nvm command, without nvm's slow startup step (finding the default
-    # version takes seconds); the default node goes on PATH directly below
-    . "$NVM_DIR/nvm.sh" --no-use
-    [ -n "${BASH_VERSION:-}" ] && [ -r "$NVM_DIR/bash_completion" ] && . "$NVM_DIR/bash_completion"
+    # nvm loads the first time you use it: loading it takes a few hundred
+    # milliseconds, and working out the default version takes seconds. The
+    # default node goes on PATH directly below instead.
+    nvm() {
+        unset -f nvm
+        . "$NVM_DIR/nvm.sh" --no-use
+        [ -n "${BASH_VERSION:-}" ] && [ -r "$NVM_DIR/bash_completion" ] && . "$NVM_DIR/bash_completion"
+        nvm "$@"
+    }
 
     # Default node: the alias's exact version (v22.11.0), the newest of its
     # major version (22), or else the newest installed (node, lts/*, ...)

@@ -47,10 +47,10 @@ first if needed. Commit `.nvmrc` and `.envrc` so others get the same.
 
 ## How it stays fast
 
-Loading nvm normally takes seconds per terminal, because it works out the
-default version on every start. This module loads the `nvm` command without
-that step (`nvm.sh --no-use`, about a tenth of a second) and puts the
-default version on `PATH` itself, reading `~/.nvm/alias/default`:
+Loading nvm the usual way adds seconds to every new terminal, mostly to
+work out the default version. This module instead loads nvm the first time
+you run `nvm`, and puts the default version on `PATH` itself, reading
+`~/.nvm/alias/default`:
 
 | Default alias | node on PATH |
 |---------------|--------------|

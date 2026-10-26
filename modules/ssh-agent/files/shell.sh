@@ -12,7 +12,13 @@ _wsl2dev_ssh_keys() {
         done
 }
 
-if command -v keychain >/dev/null 2>&1; then
+# The agent keychain started earlier, if it's still running (fast path:
+# keychain itself takes a moment to start)
+_wsl2dev_agent=$HOME/.keychain/${HOSTNAME:-${HOST:-$(hostname)}}-sh
+[ -r "$_wsl2dev_agent" ] && . "$_wsl2dev_agent" >/dev/null
+# ssh-add -l: 0 = keys loaded, 1 = agent without keys, 2 = no agent
+if ! ssh-add -l >/dev/null 2>&1 && command -v keychain >/dev/null 2>&1; then
     eval "$(keychain --eval --quiet $(_wsl2dev_ssh_keys))"
 fi
+unset _wsl2dev_agent
 unset -f _wsl2dev_ssh_keys
