@@ -2,7 +2,9 @@
 
 [Windows Subsystem for Linux](https://learn.microsoft.com/windows/wsl/about) 2 ("WSL2") lets you run a full Linux environment directly on Windows: no dual-booting, no manually provisioned virtual machines. For developers, it means you get Linux-native toolchains, package managers, and runtimes while keeping the Windows desktop you already work in.
 
-This guide walks through installing WSL2, configuring it sensibly, wiring up VS Code, and setting up common development stacks (Git, Node.js, Java/Kotlin).
+This guide walks through installing WSL2, configuring it sensibly, wiring up VS Code, and setting up common development stacks (Git, Node.js, Java/Kotlin, Python).
+
+> **Ready-made setups.** Throughout the guide, **Module** notes point to this repository's [modules](../modules/), which automate a step or go a bit further. Each one is optional and independent; take the ones you want.
 
 > **Conventions in this guide**
 > - Commands prefixed with nothing are run in your **Ubuntu** shell.
@@ -63,6 +65,8 @@ wsl --list --verbose          # Installed distros, their state, and WSL version 
 3. Select the **Ubuntu** profile → **General** → set **Starting directory**. By default Terminal drops you in your Windows home folder (mounted at `/mnt/c/Users/<you>`), which you want to avoid for real work. Set it to your Linux home:
    - Either clear the field so it uses the distro default, or
    - Set it explicitly to `\\wsl$\Ubuntu\home\<your-linux-username>`.
+
+> **Module:** [`theme`](../modules/theme/) switches Windows Terminal's color scheme together with your shell, tmux and vim colors in one command (Gruvbox, Tomorrow Night, Modus Vivendi).
 
 ---
 
@@ -145,6 +149,8 @@ You likely know the equivalents; these are the names and the flags worth memoriz
 
 A few shell ergonomics: **Tab** completes paths and commands; **Ctrl+R** searches your command history; **Ctrl+C** interrupts the running process; **Ctrl+L** (or `clear`) clears the screen; the up/down arrows walk history.
 
+> **Modules:** [`cli-tools`](../modules/cli-tools/) adds modern versions of everyday commands (`bat` for `cat`, `lsd` for `ls`, `rg` for `grep -r`). [`fzf`](../modules/fzf/) makes Ctrl+R a searchable list and adds fuzzy file (Ctrl+T) and directory (Alt+C) pickers.
+
 ### Standardize on zsh (recommended)
 
 Ubuntu ships with Bash, but this guide standardizes on **zsh** – it's largely Bash-compatible, and its interactive niceties (smarter tab-completion, better history, path expansion) make day-to-day work more pleasant. Do this switch **now**, before installing the language tools below, so their initializers land in the right profile.
@@ -162,6 +168,8 @@ The `chsh` change takes effect on your next login, so **close and reopen your Ub
 ```bash
 sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 ```
+
+> **Modules:** [`zsh`](../modules/zsh/) installs zsh with sensible defaults (large shared history, autosuggestions, history search on the arrow keys, better completion), with or without a framework. [`oh-my-zsh`](../modules/oh-my-zsh/) installs Oh My Zsh with a small plugin set *without* replacing your `~/.zshrc`, which the installer above does.
 
 ### Your shell profile: `~/.zshrc`
 
@@ -204,6 +212,8 @@ cmd.exe /c <command>    # Run a Windows command
 
 Windows automatically puts your Windows `PATH` on the Linux `PATH`, which is why `.exe`s are reachable. (If this ever causes collisions, it can be disabled in `/etc/wsl.conf`.)
 
+> **Module:** [`windows-integration`](../modules/windows-integration/) wraps these in friendlier commands: `winopen` (or `open`) for URLs, files and folders, including Linux paths, and `pbcopy`/`pbpaste` for the clipboard without `clip.exe`'s garbled non-ASCII text. It also sets `BROWSER`, so tools like `gh` open links in your Windows browser.
+
 ### Networking and `localhost`
 
 For most development this just works: a server you start inside WSL on, say, port 3000 is reachable from Windows at `http://localhost:3000`, and vice versa. That means your browser on Windows can hit a dev server running in Linux with no extra configuration. (Some advanced setups bind only to the loopback interface or use mirrored networking – worth knowing the term if you ever need to dig in, but the default behavior is transparent.)
@@ -223,6 +233,8 @@ Guidance:
 
   This checks out as-is and commits LF, which is what you want when the code runs in Linux.
 - If a file already has the wrong endings, `dos2unix <file>` (install with `sudo apt install dos2unix`) fixes it.
+
+> **Module:** [`git`](../modules/git/) sets `core.autocrlf input` along with other WSL-friendly git defaults (see [§9](#9-set-up-git)).
 
 ---
 
@@ -271,6 +283,8 @@ git config --global user.email "you@example.com"
 git config --global init.defaultBranch main
 ```
 
+> **Module:** [`git`](../modules/git/) adds a set of modern defaults (clearer diffs and conflicts, rebasing pulls, `git push` that sets up new branches), VS Code as the diff and merge tool, and Windows' Git Credential Manager for HTTPS remotes if Git for Windows is installed. Your own `git config --global` settings still win.
+
 ### GitHub authentication over SSH
 
 Generate a key inside WSL and add it to your GitHub account. Follow GitHub's guide and be sure to use the **Linux** instructions:
@@ -287,6 +301,8 @@ ssh -T git@github.com       # Verify
 ```
 
 You're now set to clone repositories. Put them somewhere under `~` (e.g., `~/repos`).
+
+> **Module:** the `ssh-agent` step above lasts only for that terminal. [`ssh-agent`](../modules/ssh-agent/) sets up keychain, so every terminal shares one agent and you type your key's passphrase once per WSL session.
 
 ---
 
@@ -325,6 +341,8 @@ nvm use --lts
 node --version         # Verify
 ```
 
+> **Module:** [`node-nvm`](../modules/node-nvm/) installs nvm and the latest LTS node without the seconds nvm usually adds to every new terminal, and uses direnv to switch to each project's `.nvmrc` version as you `cd` into it.
+
 ### 10.4 Java and Kotlin (via SDKMAN!)
 
 Use [SDKMAN!](https://sdkman.io/) to install and manage Java, Kotlin, Maven, Gradle, and more. The big win is that you avoid hand-wiring a JDK installation and `JAVA_HOME`, and you can install and switch between versions trivially.
@@ -357,6 +375,19 @@ sdk install gradle
 ```
 
 Switch versions at any time with `sdk use java <identifier>`, or set a default with `sdk default java <identifier>`.
+
+### 10.5 Python (via uv)
+
+Ubuntu comes with Python 3, but leave that one to the system. For your own projects, [uv](https://docs.astral.sh/uv/) does the jobs of pip, venv and pyenv in one fast tool: it creates projects, manages their dependencies with a lock file, and installs whichever Python version a project needs.
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh   # Install uv (open a new shell after)
+uv init myproject && cd myproject                  # A new project
+uv add requests                                    # Add a dependency (creates .venv)
+uv run python                                      # Run something in the project's environment
+```
+
+> **Module:** [`python-uv`](../modules/python-uv/) installs uv and direnv, so a project's `.venv` is synced and activated automatically when you `cd` into it.
 
 ---
 
@@ -440,6 +471,8 @@ alias pbpaste='powershell.exe Get-Clipboard'
 alias open='explorer.exe'
 ```
 
+> **Module:** these aliases have rough edges: `clip.exe` garbles non-ASCII text, `Get-Clipboard` adds Windows line endings, and `explorer.exe` doesn't understand Linux paths. [`windows-integration`](../modules/windows-integration/) installs `pbcopy`, `pbpaste` and `open` commands that handle all three.
+
 ### GNU vs BSD coreutils
 
 macOS ships **BSD** versions of `sed`, `awk`, `ls`, `date`, `find`, etc.; Linux ships **GNU** versions. They differ in flags and behavior, and this is the classic source of "the command I've typed for a decade now behaves differently":
@@ -475,3 +508,5 @@ SSH keys, `git`, Node/nvm, SDKMAN!, Docker workflows, and the general Unix shell
 - Homebrew on Linux: <https://docs.brew.sh/Homebrew-on-Linux>
 - SDKMAN!: <https://sdkman.io/>
 - nvm: <https://github.com/nvm-sh/nvm>
+- uv: <https://docs.astral.sh/uv/>
+- This repository's modules, including a [tmux](../modules/tmux/) setup and a [vim](../modules/vim/) configuration with [language servers](../modules/vim-coc/): [modules](../modules/)

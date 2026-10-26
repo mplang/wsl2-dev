@@ -10,7 +10,7 @@ don't use vim, nothing here touches vim.
 
 | Guide | For |
 |-------|-----|
-| [Developing on WSL2 (Ubuntu)](guides/developer-guide.md) | Installing WSL2, the filesystem, Windows interop, VS Code, git and SSH, Node and Java, troubleshooting, and notes for people coming from macOS |
+| [Developing on WSL2 (Ubuntu)](guides/developer-guide.md) | Installing WSL2, the filesystem, Windows interop, VS Code, git and SSH, Node, Java and Python, troubleshooting, and notes for people coming from macOS; with pointers to the modules below |
 
 ## Modules
 
