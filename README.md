@@ -32,12 +32,12 @@ they're put together.
 | [`vim`](modules/vim/) | A vim config and plugin set: fzf, NERDTree, fugitive, airline, gruvbox, and Ctrl-H/J/K/L across vim and tmux |
 | [`vim-coc`](modules/vim-coc/) | Language servers in vim (CoC): completion, go to definition, rename, code actions; ALE fixers. Needs `vim` |
 | [`python-uv`](modules/python-uv/) | Python projects with uv; direnv activates each project's `.venv` on `cd` (`layout uv`) |
+| [`node-nvm`](modules/node-nvm/) | Node versions with nvm, without nvm's slow shell startup; direnv switches per project (`use nvm`) |
 
 Planned, one at a time:
 
 | Module | What it does |
 |--------|--------------|
-| `node-nvm` | Node versions per project with nvm; direnv switches them |
 | `theme` | One command to switch the color theme of Windows Terminal, Windows' accent, the shell, tmux, vim and fzf (Gruvbox, Tomorrow Night, Modus Vivendi) |
 
 ## Requirements
