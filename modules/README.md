@@ -36,6 +36,15 @@ source ~/.config/wsl2-dev/fzf/fzf.zsh
 To remove a module by hand, delete its marked block and its
 `~/.config/wsl2-dev/<name>/` folder.
 
+Some modules extend another one by dropping files into their own folder,
+which the other module loads if they exist:
+
+| File | Loaded by | Used by |
+|------|-----------|---------|
+| `~/.config/wsl2-dev/*/vim-plugins.vim` | `vim`, inside `plug#begin()` | `vim-coc`, `theme` |
+| `~/.config/wsl2-dev/*/vim-config.vim` | `vim`, at the end | `vim-coc`, `theme` |
+| `~/.config/wsl2-dev/*/tmux-plugins.conf` | `tmux`, before TPM starts | `vim` |
+
 ## `install.sh`
 
 Every module's script works the same way:
