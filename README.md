@@ -30,12 +30,12 @@ they're put together.
 | [`git`](modules/git/) | WSL-friendly git settings (LF line endings, `zdiff3` conflicts, rebasing pulls, ...), VS Code as diff/merge tool, Windows' Git Credential Manager for HTTPS |
 | [`tmux`](modules/tmux/) | tmux for Windows Terminal: `Ctrl-Space` prefix, mouse, copies to the Windows clipboard, a themeable status bar, plugins via TPM |
 | [`vim`](modules/vim/) | A vim config and plugin set: fzf, NERDTree, fugitive, airline, gruvbox, and Ctrl-H/J/K/L across vim and tmux |
+| [`vim-coc`](modules/vim-coc/) | Language servers in vim (CoC): completion, go to definition, rename, code actions; ALE fixers. Needs `vim` |
 
 Planned, one at a time:
 
 | Module | What it does |
 |--------|--------------|
-| `vim-coc` | Language-server completion in vim with CoC (needs `vim` and node) |
 | `python-uv` | Python projects with uv; direnv activates each project's `.venv` |
 | `node-nvm` | Node versions per project with nvm; direnv switches them |
 | `theme` | One command to switch the color theme of Windows Terminal, Windows' accent, the shell, tmux, vim and fzf (Gruvbox, Tomorrow Night, Modus Vivendi) |

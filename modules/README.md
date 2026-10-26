@@ -19,19 +19,22 @@ under `~/.config/wsl2-dev/<name>/` (scripts go to `~/.local/bin/`) and, where
 a tool has no drop-in directory of its own, adds **one** line to your config
 between markers:
 
-```zsh
-# >>> wsl2-dev:fzf >>>
-source ~/.config/wsl2-dev/fzf/fzf.zsh
-# <<< wsl2-dev:fzf <<<
+```bash
+# >>> wsl2-dev:cli-tools >>>
+[ -f "${XDG_CONFIG_HOME:-$HOME/.config}/wsl2-dev/cli-tools/shell.sh" ] && . "${XDG_CONFIG_HOME:-$HOME/.config}/wsl2-dev/cli-tools/shell.sh"
+# <<< wsl2-dev:cli-tools <<<
 ```
 
 | Tool | Hook |
 |------|------|
-| zsh | a marked `source` line in `~/.zshrc` |
-| tmux | a marked `source-file` line in `~/.tmux.conf` |
-| vim | a marked `source` line in `~/.vimrc` |
-| git | an `[include]` added with `git config --global --add include.path` |
+| bash, zsh | a marked line in `~/.bashrc` / `~/.zshrc` that loads the module's file |
+| tmux | a marked `source-file` line at the top of `~/.tmux.conf` (and one at the end for plugins) |
+| vim | a marked `source` line at the top of `~/.vimrc` |
+| git | a marked `[include]` at the top of `~/.gitconfig` |
 | direnv | a marked `source_env` line in `~/.config/direnv/direnvrc` |
+
+Hooks at the **top** of a file (oh-my-zsh, tmux, vim, git) load the module
+first, so your own settings below them win.
 
 To remove a module by hand, delete its marked block and its
 `~/.config/wsl2-dev/<name>/` folder.

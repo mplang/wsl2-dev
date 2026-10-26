@@ -202,6 +202,25 @@ remove_hook() {
     step "remove the $TAG block from $(pretty "$file")" _write "$file" "$rest"
 }
 
+# vim_plug_install PLUGIN...: run vim-plug's :PlugInstall without a window,
+# then check that each PLUGIN's folder exists
+vim_plug_install() {
+    local list=${CONFIG_DIR%/*}/vim/plugins.vim plugin missing=()
+    if ((DRY_RUN)); then say "  would install the vim plugins (:PlugInstall)"; return 0; fi
+    say "  installing the vim plugins (:PlugInstall)..."
+    # Only the plugin list: with the full config loaded, headless vim-plug
+    # skips some plugins. And its output must go to a pipe, not a file.
+    vim -NEs -u "$list" -i NONE -c 'PlugInstall --sync' -c 'qa!' </dev/null 2>&1 | cat >/dev/null || true
+    for plugin; do
+        [[ -d $HOME/.vim/plugged/$plugin ]] || missing+=("$plugin")
+    done
+    if ((${#missing[@]})); then
+        say "  some plugins didn't install (${missing[*]}); open vim and run :PlugInstall"
+    else
+        say "  the plugins are installed in ~/.vim/plugged"
+    fi
+}
+
 # shell_rcs: the interactive shell startup files that exist (bash and zsh)
 shell_rcs() {
     local rc

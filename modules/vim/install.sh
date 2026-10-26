@@ -26,6 +26,7 @@ if ((UNINSTALL)); then
     say "Removing $MODULE:"
     remove_hook "$VIMRC" '"'
     remove_file "$CONFIG_DIR/vimrc.vim"
+    remove_file "$CONFIG_DIR/plugins.vim"
     remove_file "$CONFIG_DIR/tmux-plugins.conf"
     [[ -e $LOCAL ]] && say "  keeping $(pretty "$LOCAL") (your plugins; delete it if you like)"
     remove_dir "$CONFIG_DIR"
@@ -33,10 +34,11 @@ if ((UNINSTALL)); then
     exit 0
 fi
 
-check_free "$CONFIG_DIR/vimrc.vim" "$CONFIG_DIR/tmux-plugins.conf"
+check_free "$CONFIG_DIR/vimrc.vim" "$CONFIG_DIR/plugins.vim" "$CONFIG_DIR/tmux-plugins.conf"
 say "Installing $MODULE:"
 apt_install vim git curl
 install_file "$MODULE_DIR/files/vimrc.vim" "$CONFIG_DIR/vimrc.vim" 644
+install_file "$MODULE_DIR/files/plugins.vim" "$CONFIG_DIR/plugins.vim" 644
 install_file "$MODULE_DIR/files/tmux-plugins.conf" "$CONFIG_DIR/tmux-plugins.conf" 644
 [[ -e $LOCAL ]] || step "create $(pretty "$LOCAL") for your own plugins" cp "$MODULE_DIR/files/plugins.local.vim" "$LOCAL"
 
@@ -53,22 +55,7 @@ else
     step "download vim-plug to $(pretty "$PLUG")" \
         curl -fsSLo "$PLUG" --create-dirs https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
 fi
-if ((DRY_RUN)); then
-    say "  would install the vim plugins (:PlugInstall)"
-else
-    say "  installing the vim plugins (:PlugInstall)..."
-    # Headless vim-plug only works with output to a pipe, not a file or /dev/null
-    vim -NEs -u "$VIMRC" -i NONE -c 'PlugInstall --sync' -c 'qa!' </dev/null 2>&1 | cat >/dev/null || true
-    missing=()
-    for plugin in vim-fugitive fzf.vim vim-airline gruvbox; do
-        [[ -d $HOME/.vim/plugged/$plugin ]] || missing+=("$plugin")
-    done
-    if ((${#missing[@]})); then
-        say "  some plugins didn't install (${missing[*]}); open vim and run :PlugInstall"
-    else
-        say "  the vim plugins are installed in ~/.vim/plugged"
-    fi
-fi
+vim_plug_install vim-fugitive fzf.vim vim-airline gruvbox
 
 say "Done. Open vim and try Ctrl-P (files), \\e (file tree), gcc (comment a line)."
 [[ -e $HOME/.config/wsl2-dev/tmux/plugins.conf ]] &&
