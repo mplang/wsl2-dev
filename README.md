@@ -24,12 +24,13 @@ they're put together.
 | [`windows-integration`](modules/windows-integration/) | Open URLs, files and folders in Windows (`winopen`, `open`, `BROWSER`), and `pbcopy`/`pbpaste` for the Windows clipboard |
 | [`ssh-agent`](modules/ssh-agent/) | One SSH agent for every shell (keychain): type your key's passphrase once per WSL session |
 | [`cli-tools`](modules/cli-tools/) | bat, lsd, eza, ripgrep and glow, with `ls`/`ll`/`la`/`lt` aliases and colored man pages |
+| [`zsh`](modules/zsh/) | zsh with large shared history, autosuggestions, better completion and keys; works with or without a framework |
+| [`oh-my-zsh`](modules/oh-my-zsh/) | oh-my-zsh with a small plugin set, your own `local.zsh`, and optionally powerlevel10k |
 
 Planned, one at a time:
 
 | Module | What it does |
 |--------|--------------|
-| `zsh` | oh-my-zsh with a curated plugin set, autosuggestions and larger, de-duplicated history |
 | `fzf` | fzf with ripgrep for file search, bat previews and fzf-tab completion |
 | `tmux` | A tmux config: `Ctrl-Space` prefix, mouse, clipboard to Windows (OSC 52), plugins via TPM, status bar |
 | `vim` | A vim config and plugin set (vim-plug) |

@@ -27,7 +27,9 @@ parse_args() {
             --dry-run)   DRY_RUN=1 ;;
             --uninstall) UNINSTALL=1 ;;
             -h|--help)   usage ;;
-            *)           echo "unknown option: $1" >&2; usage 1 >&2 ;;
+            *)  # a module can take more options by defining module_option
+                if declare -F module_option >/dev/null && module_option "$1"; then :
+                else echo "unknown option: $1" >&2; usage 1 >&2; fi ;;
         esac
         shift
     done
@@ -58,6 +60,14 @@ require_cmd() {
     for cmd; do
         command -v "$cmd" >/dev/null || die "$cmd is required; install it first"
     done
+}
+
+# confirm QUESTION: ask yes/no (Enter means yes); no when not interactive
+confirm() {
+    [[ -t 0 ]] || return 1
+    local answer
+    read -rp "  $1 [Y/n] " answer
+    [[ ${answer:-y} == [Yy]* ]]
 }
 
 # apt_install PACKAGE...: install the ones that are missing, after asking
@@ -143,7 +153,9 @@ _write() { printf '%s\n' "$2" > "$1"; }
 
 # add_hook FILE COMMENT LINE...: put LINEs in FILE between this module's
 # markers (COMMENT is the file's comment string, e.g. "#" or "\""). Replaces
-# an outdated block; leaves an identical one alone. Creates FILE if needed.
+# an outdated block where it is; leaves an identical one alone. A new block
+# goes at the end, or at the top with HOOK_POSITION=top (for frameworks that
+# must load before everything else). Creates FILE if needed.
 add_hook() {
     local file=$1 comment=$2; shift 2
     local block current="" rest=""
@@ -169,7 +181,9 @@ add_hook() {
         while [[ $rest == *$'\n' ]]; do rest=${rest%$'\n'}; done
     fi
     local verb="add the $TAG block to"
-    if [[ -n $rest ]]; then
+    if [[ -n $rest && ${HOOK_POSITION:-bottom} == top ]]; then
+        step "$verb the top of $(pretty "$file")" _write "$file" "$block"$'\n\n'"$rest"
+    elif [[ -n $rest ]]; then
         step "$verb $(pretty "$file")" _write "$file" "$rest"$'\n\n'"$block"
     else
         step "$verb $(pretty "$file")" _write "$file" "$block"
