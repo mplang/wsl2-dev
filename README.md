@@ -33,12 +33,24 @@ they're put together.
 | [`vim-coc`](modules/vim-coc/) | Language servers in vim (CoC): completion, go to definition, rename, code actions; ALE fixers. Needs `vim` |
 | [`python-uv`](modules/python-uv/) | Python projects with uv; direnv activates each project's `.venv` on `cd` (`layout uv`) |
 | [`node-nvm`](modules/node-nvm/) | Node versions with nvm, without nvm's slow shell startup; direnv switches per project (`use nvm`) |
+| [`theme`](modules/theme/) | One command to switch the colors of Windows Terminal, file listings, bat, fzf, tmux, vim and (optionally) Windows: Gruvbox, Tomorrow Night, Modus Vivendi |
 
-Planned, one at a time:
+## Quick Start
 
-| Module | What it does |
-|--------|--------------|
-| `theme` | One command to switch the color theme of Windows Terminal, Windows' accent, the shell, tmux, vim and fzf (Gruvbox, Tomorrow Night, Modus Vivendi) |
+```bash
+git clone https://github.com/mplang/wsl2-dev.git ~/wsl2-dev
+cd ~/wsl2-dev/modules/windows-integration
+./install.sh --dry-run        # see what it would change
+./install.sh
+```
+
+Each installer asks before it uses `sudo`, never overwrites a file it
+didn't create, backs up any file it edits, and undoes itself with
+`--uninstall`. Run it again to update. Install in any order, except:
+
+- `vim` before `vim-coc`;
+- the shell modules (`zsh`, `oh-my-zsh`) first, if you want them, so the
+  others find your `~/.zshrc`.
 
 ## Requirements
 

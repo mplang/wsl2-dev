@@ -1,0 +1,45 @@
+# Modus Vivendi (https://protesilaos.com/emacs/modus-themes)
+# wsl2-dev:theme -- see the theme module's README for each key.
+THEME_NAME='Modus Vivendi'
+
+# --- Tools with their own theme ---
+VIM_COLORSCHEME='modus'   # vim-colors-modus: Vivendi with background=dark
+VIM_BACKGROUND='dark'
+AIRLINE_THEME='base16_grayscale_dark'
+BAT_THEME='base16'        # bat has no Modus theme; base16 uses the terminal palette
+
+# --- Terminal (Windows Terminal scheme / Terminal.app profile) ---
+TERM_SCHEME='Modus Vivendi'
+TERM_BG='#000000'
+TERM_FG='#ffffff'
+TERM_CURSOR='#ffffff'
+TERM_SELECTION='#5a5a5a'
+#         black     red       green     yellow    blue      purple    cyan      white
+TERM_ANSI=('#000000' '#ff5f59' '#44bc44' '#d0bc00' '#2fafff' '#feacd0' '#00d3d0' '#a6a6a6'
+           '#595959' '#ff7f9f' '#00c06f' '#fec43f' '#79a8ff' '#b6a0ff' '#6ae4b9' '#ffffff')
+
+# --- Named colors (LS_COLORS) ---
+C_RED='#ff5f59'
+C_ORANGE='#fec43f'
+C_YELLOW='#d0bc00'
+C_GREEN='#44bc44'
+C_CYAN='#00d3d0'
+C_BLUE='#2fafff'
+C_PURPLE='#b6a0ff'
+C_GRAY='#989898'
+
+# --- UI roles (tmux, fzf, zsh) ---
+UI_BG1='#1e1e1e'      # status bar, fzf current line
+UI_BG2='#303030'      # inactive window tabs, messages
+UI_BG3='#535353'      # session segment, borders
+UI_FG='#ffffff'
+UI_FG_DIM='#989898'   # secondary text
+UI_FG_ALT='#c6daff'   # host segment
+UI_ACCENT='#2fafff'   # current window tab
+UI_HILITE='#b6a0ff'   # fzf prompt/pointer/matches, bell
+UI_INFO='#00d3d0'     # fzf counters
+UI_COMMENT='#989898'  # autosuggestions, fzf headers
+
+# --- OS (Windows / macOS) ---
+OS_APPEARANCE='dark'
+OS_ACCENT='#2fafff'

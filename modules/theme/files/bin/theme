@@ -1,0 +1,223 @@
+#!/usr/bin/env bash
+# theme -- switch the color theme of the shell, fzf, tmux, vim and Windows
+# Terminal (wsl2-dev:theme)
+#
+#   theme                   list the themes; * marks the current one
+#   theme NAME              switch to NAME
+#   theme --windows NAME    ... and set Windows' dark/light mode and accent color
+#   theme --apply           redo the current theme (after editing a theme file)
+#
+# Options:
+#   --windows      also change Windows' mode and accent color (registry)
+#   --no-terminal  leave Windows Terminal alone
+#   --dry-run      change nothing; show what Windows Terminal/Windows would get
+#   -q, --quiet    no output except errors
+#
+# Themes: ~/.config/wsl2-dev/theme/themes/, and your own in
+# ~/.config/wsl2-dev/theme/my-themes/ (same name wins). The choice is per WSL
+# distro. Open shells pick up a switch at their next prompt, vim when it
+# regains focus, tmux right away.
+
+set -euo pipefail
+
+CONF=${XDG_CONFIG_HOME:-$HOME/.config}/wsl2-dev/theme
+STATE_DIR=${XDG_STATE_HOME:-$HOME/.local/state}/wsl2-dev/theme
+STATE=$STATE_DIR/current
+DEFAULT=gruvbox
+TAG='wsl2-dev:theme'
+
+REQUIRED=(THEME_NAME VIM_COLORSCHEME VIM_BACKGROUND AIRLINE_THEME BAT_THEME
+          TERM_SCHEME TERM_BG TERM_FG TERM_CURSOR TERM_SELECTION TERM_ANSI
+          C_RED C_ORANGE C_YELLOW C_GREEN C_CYAN C_BLUE C_PURPLE C_GRAY
+          UI_BG1 UI_BG2 UI_BG3 UI_FG UI_FG_DIM UI_FG_ALT UI_ACCENT UI_HILITE
+          UI_INFO UI_COMMENT OS_APPEARANCE OS_ACCENT)
+
+die() { printf 'theme: %s\n' "$*" >&2; exit 1; }
+say() { ((quiet)) || printf '%s\n' "$*"; }
+usage() { sed -n '2,/^$/{s/^# \{0,1\}//;p}' "$0"; exit "${1:-0}"; }
+
+theme_file() {
+    local dir
+    for dir in "$CONF/my-themes" "$CONF/themes"; do
+        [[ -r $dir/$1.theme ]] && { printf '%s\n' "$dir/$1.theme"; return 0; }
+    done
+    return 1
+}
+
+available() {
+    local f
+    for f in "$CONF"/my-themes/*.theme "$CONF"/themes/*.theme; do
+        [[ -e $f ]] && basename "$f" .theme
+    done | sort -u
+}
+
+current() {
+    local id=
+    [[ -r $STATE ]] && id=$(<"$STATE")
+    printf '%s\n' "${id:-$DEFAULT}"
+}
+
+# Load NAME's theme file into this (short-lived) process and check it
+load() {
+    local file key
+    file=$(theme_file "$1") || die "no such theme: $1 (try: $(available | paste -sd ' '))"
+    # shellcheck disable=SC1090
+    source "$file"
+    for key in "${REQUIRED[@]}"; do
+        [[ -v $key ]] || die "$file: $key isn't set"
+    done
+    ((${#TERM_ANSI[@]} == 16)) || die "$file: TERM_ANSI needs 16 colors"
+}
+
+# '#rrggbb' -> 'r;g;b' in REPLY
+rgb() {
+    [[ $1 =~ ^#([[:xdigit:]]{2})([[:xdigit:]]{2})([[:xdigit:]]{2})$ ]] || die "not a #rrggbb color: $1"
+    REPLY="$((16#${BASH_REMATCH[1]}));$((16#${BASH_REMATCH[2]}));$((16#${BASH_REMATCH[3]}))"
+}
+
+# ls_colors (KEY... = TOKEN...) -> an LS_COLORS value in REPLY
+render_ls_colors() {
+    local -A color=([red]=$C_RED [orange]=$C_ORANGE [yellow]=$C_YELLOW [green]=$C_GREEN
+                    [cyan]=$C_CYAN [blue]=$C_BLUE [purple]=$C_PURPLE [gray]=$C_GRAY
+                    [fg]=$UI_FG [bg]=$TERM_BG [bg1]=$UI_BG1 [bg2]=$UI_BG2 [bg3]=$UI_BG3)
+    local line token key name joined out='rs=0'
+    local -a keys tokens codes
+    while IFS= read -r line; do
+        line=${line%%#*}
+        [[ $line == *=* ]] || continue
+        read -ra keys <<<"${line%%=*}"
+        read -ra tokens <<<"${line#*=}"
+        codes=()
+        for token in "${tokens[@]}"; do
+            case $token in
+                bold)      codes+=(1) ;;
+                underline) codes+=(4) ;;
+                on-*)      name=${token#on-}
+                           [[ -v color[$name] ]] || die "ls_colors: unknown color $token"
+                           rgb "${color[$name]}"; codes+=("48;2;$REPLY") ;;
+                *)         [[ -v color[$token] ]] || die "ls_colors: unknown token $token"
+                           rgb "${color[$token]}"; codes+=("38;2;$REPLY") ;;
+            esac
+        done
+        printf -v joined '%s;' "${codes[@]}"
+        for key in "${keys[@]}"; do out+=":$key=${joined%;}"; done
+    done < "$CONF/ls_colors"
+    REPLY=$out
+}
+
+render() {
+    local id=$1 header tmp
+    header="# $TAG -- written by \`theme\` from $id.theme; don't edit"
+    tmp=$(mktemp -d "$CONF/.render.XXXXXX")
+
+    render_ls_colors
+    {
+        printf '%s\n' "$header"
+        printf 'export WSL2DEV_THEME=%q\n' "$id"
+        printf "export LS_COLORS='%s'\n" "$REPLY"
+        printf 'export BAT_THEME=%q\n' "$BAT_THEME"
+        printf "ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=%s'\n" "$UI_COMMENT"
+    } > "$tmp/env.sh"
+
+    # fzf reads this file (FZF_DEFAULT_OPTS_FILE, fzf 0.47+); no comments allowed
+    cat > "$tmp/fzfrc" <<EOF
+--color=fg:$UI_FG,bg:-1,hl:$UI_COMMENT,fg+:$UI_FG,bg+:$UI_BG1,hl+:$UI_HILITE
+--color=info:$UI_INFO,prompt:$UI_HILITE,pointer:$UI_HILITE,marker:$UI_HILITE
+--color=spinner:$UI_HILITE,header:$UI_COMMENT,border:$UI_BG3
+EOF
+
+    # The tmux module's status bar uses these @thm_* options
+    cat > "$tmp/tmux.conf" <<EOF
+$header
+set -g @thm_bg '$TERM_BG'
+set -g @thm_fg '$UI_FG'
+set -g @thm_bg1 '$UI_BG1'
+set -g @thm_bg2 '$UI_BG2'
+set -g @thm_bg3 '$UI_BG3'
+set -g @thm_fg_dim '$UI_FG_DIM'
+set -g @thm_fg_alt '$UI_FG_ALT'
+set -g @thm_accent '$UI_ACCENT'
+set -g @thm_hilite '$UI_HILITE'
+set -g display-panes-colour '$UI_BG1'
+set -g display-panes-active-colour '$UI_FG_ALT'
+setw -g clock-mode-colour '$C_BLUE'
+EOF
+
+    # env.sh last: shells reload when it changes
+    mv -f "$tmp/fzfrc" "$tmp/tmux.conf" "$CONF/"
+    mv -f "$tmp/env.sh" "$CONF/"
+    rmdir "$tmp"
+}
+
+# Recolor a running tmux that uses the tmux module's status bar
+reload_tmux() {
+    command -v tmux >/dev/null || return 0
+    [[ -n $(tmux show -gqv @wsl2dev-powerline 2>/dev/null) ]] || return 0
+    tmux source-file "$CONF/tmux.conf" && tmux refresh-client -S 2>/dev/null || true
+    say "Recolored tmux."
+}
+
+# Windows Terminal (and, with --windows, Windows itself)
+run_hook() {
+    local key
+    local -a args=()
+    ((dry_run)) && args+=(--dry-run)
+    ((quiet)) && args+=(--quiet)
+    ((windows)) && args+=(--windows)
+    if ((no_terminal)) && ! ((windows)); then
+        return 0
+    fi
+    ((no_terminal)) && args+=(--no-terminal)
+    command -v python3 >/dev/null || die "python3 is needed to change Windows Terminal (sudo apt install python3)"
+    # The hook gets the theme as environment variables (TERM_ANSI: 16 colors)
+    export THEME_ID=$1
+    for key in "${REQUIRED[@]}"; do
+        if [[ $key == TERM_ANSI ]]; then
+            export TERM_ANSI_LIST="${TERM_ANSI[*]}"
+        else
+            export "${key?}"
+        fi
+    done
+    python3 "$CONF/windows.py" "${args[@]}"
+}
+
+# --- Main ---
+
+quiet=0 dry_run=0 apply=0 windows=0 no_terminal=0 target=
+while (($#)); do
+    case $1 in
+        --apply)       apply=1 ;;
+        --windows)     windows=1 ;;
+        --no-terminal) no_terminal=1 ;;
+        --dry-run)     dry_run=1 ;;
+        -q|--quiet)    quiet=1 ;;
+        -h|--help)     usage ;;
+        -*)            printf 'theme: unknown option %s\n' "$1" >&2; usage 1 >&2 ;;
+        *)             [[ -z $target ]] || usage 1 >&2; target=$1 ;;
+    esac
+    shift
+done
+
+if ((!apply)) && [[ -z $target ]]; then
+    cur=$(current)
+    while read -r id; do
+        if [[ $id == "$cur" ]]; then echo "* $id"; else echo "  $id"; fi
+    done < <(available)
+    exit 0
+fi
+((apply)) && [[ -n $target ]] && die "use either NAME or --apply"
+id=${target:-$(current)}
+load "$id"
+
+if ((dry_run)); then
+    say "Dry run: would switch to $THEME_NAME ($id)."
+    run_hook "$id"
+    exit 0
+fi
+
+render "$id"
+mkdir -p "$STATE_DIR"
+printf '%s\n' "$id" > "$STATE"
+say "Theme: $THEME_NAME ($id)"
+reload_tmux
+run_hook "$id"

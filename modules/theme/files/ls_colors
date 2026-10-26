@@ -1,0 +1,38 @@
+# wsl2-dev:theme -- file colors for LS_COLORS (ls, lsd, eza, zsh completion),
+# rendered by `theme` with the current theme's colors.
+#
+# Format:  KEY... = TOKEN...
+#   KEY    an LS_COLORS key (di, ln, ex, ...) or a glob such as *.tar
+#   TOKEN  bold | underline | COLOR (foreground) | on-COLOR (background)
+#   COLOR  red orange yellow green cyan blue purple gray fg bg bg1 bg2 bg3
+
+# --- File types ---
+di = bold blue
+ln = cyan
+or = bold red on-bg1            # broken symlink
+mi = red
+ex = bold green
+pi = yellow
+so do = bold purple
+bd cd = bold yellow on-bg1
+su = bg on-red                  # setuid
+sg = bg on-yellow               # setgid
+tw = bg on-green                # sticky, other-writable dir
+ow = blue on-bg2                # other-writable dir
+st = bg on-blue                 # sticky dir
+
+# --- Archives and packages ---
+*.tar *.tgz *.gz *.bz2 *.xz *.zst *.zip *.7z *.rar = red
+*.deb *.rpm *.jar *.whl *.iso *.dmg *.pkg = red
+
+# --- Images ---
+*.png *.jpg *.jpeg *.gif *.bmp *.webp *.svg *.ico *.tif *.tiff *.heic = purple
+
+# --- Audio and video ---
+*.mp3 *.flac *.wav *.ogg *.m4a *.mp4 *.mkv *.mov *.avi *.webm = orange
+
+# --- Documents ---
+*.md *.txt *.rst *.pdf *.doc *.docx *.xls *.xlsx *.csv = yellow
+
+# --- Leftovers ---
+*~ *.bak *.orig *.swp *.tmp *.log *.pyc = gray

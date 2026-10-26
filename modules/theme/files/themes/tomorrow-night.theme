@@ -1,0 +1,45 @@
+# Tomorrow Night (https://github.com/chriskempson/tomorrow-theme)
+# wsl2-dev:theme -- see the theme module's README for each key.
+THEME_NAME='Tomorrow Night'
+
+# --- Tools with their own theme ---
+VIM_COLORSCHEME='Tomorrow-Night'
+VIM_BACKGROUND='dark'
+AIRLINE_THEME='tomorrow'
+BAT_THEME='base16'    # bat has no Tomorrow theme; base16 uses the terminal palette
+
+# --- Terminal (Windows Terminal scheme / Terminal.app profile) ---
+TERM_SCHEME='Tomorrow Night'
+TERM_BG='#1d1f21'
+TERM_FG='#c5c8c6'
+TERM_CURSOR='#c5c8c6'
+TERM_SELECTION='#373b41'
+#         black     red       green     yellow    blue      purple    cyan      white
+TERM_ANSI=('#000000' '#cc6666' '#b5bd68' '#f0c674' '#81a2be' '#b294bb' '#8abeb7' '#ffffff'
+           '#4c4c4c' '#cc6666' '#b5bd68' '#f0c674' '#81a2be' '#b294bb' '#8abeb7' '#ffffff')
+
+# --- Named colors (LS_COLORS) ---
+C_RED='#cc6666'
+C_ORANGE='#de935f'
+C_YELLOW='#f0c674'
+C_GREEN='#b5bd68'
+C_CYAN='#8abeb7'
+C_BLUE='#81a2be'
+C_PURPLE='#b294bb'
+C_GRAY='#969896'
+
+# --- UI roles (tmux, fzf, zsh) ---
+UI_BG1='#282a2e'      # status bar, fzf current line
+UI_BG2='#373b41'      # inactive window tabs, messages
+UI_BG3='#4d5057'      # session segment, borders
+UI_FG='#c5c8c6'
+UI_FG_DIM='#969896'   # secondary text
+UI_FG_ALT='#b4b7b4'   # host segment
+UI_ACCENT='#81a2be'   # current window tab
+UI_HILITE='#cc6666'   # fzf prompt/pointer/matches, bell
+UI_INFO='#8abeb7'     # fzf counters
+UI_COMMENT='#969896'  # autosuggestions, fzf headers
+
+# --- OS (Windows / macOS) ---
+OS_APPEARANCE='dark'
+OS_ACCENT='#81a2be'
