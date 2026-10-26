@@ -19,11 +19,15 @@ does, why, how to install and remove it by hand) and an `install.sh` that
 does the same for you. See [modules/README.md](modules/README.md) for how
 they're put together.
 
-Modules are being added one at a time. Planned:
+| Module | What it does |
+|--------|--------------|
+| [`windows-integration`](modules/windows-integration/) | Open URLs, files and folders in Windows (`winopen`, `open`, `BROWSER`), and `pbcopy`/`pbpaste` for the Windows clipboard |
+
+Planned, one at a time:
 
 | Module | What it does |
 |--------|--------------|
-| `windows-integration` | Open URLs and files in Windows from Linux (`BROWSER`), `pbcopy`/`pbpaste`/`open` equivalents, one SSH agent for every shell (keychain) |
+| `ssh-agent` | One SSH agent for every shell (keychain): type your key's passphrase once per WSL session |
 | `cli-tools` | bat, lsd, eza, ripgrep and glow, with aliases |
 | `zsh` | oh-my-zsh with a curated plugin set, autosuggestions and larger, de-duplicated history |
 | `fzf` | fzf with ripgrep for file search, bat previews and fzf-tab completion |

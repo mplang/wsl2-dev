@@ -1,0 +1,11 @@
+#!/bin/sh
+# pbcopy -- copy standard input to the Windows clipboard
+# (wsl2-dev:windows-integration)
+#
+#   echo hello | pbcopy
+#   pbcopy < notes.txt
+
+# clip.exe reads UTF-16 with a byte-order mark as Unicode; plain UTF-8 comes
+# out garbled for anything beyond ASCII
+clip=$(wslpath -u 'C:\Windows\System32\clip.exe')
+{ printf '\377\376'; iconv -f UTF-8 -t UTF-16LE; } | "$clip"

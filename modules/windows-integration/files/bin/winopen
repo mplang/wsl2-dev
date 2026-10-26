@@ -1,0 +1,22 @@
+#!/bin/sh
+# winopen -- open URLs, files and folders with their Windows default app
+# (wsl2-dev:windows-integration)
+#
+#   winopen https://example.com     the default browser
+#   winopen report.pdf              the app Windows uses for PDFs
+#   winopen .                       Explorer, in this folder
+#
+# With BROWSER=winopen, Linux tools (gh, python's webbrowser, ...) open links
+# in Windows too.
+
+if [ $# -eq 0 ]; then
+    sed -n '4,7s/^# \{0,1\}//p' "$0" >&2
+    exit 2
+fi
+explorer=$(wslpath -u 'C:\Windows\explorer.exe')
+for target; do
+    # Linux paths become Windows ones (\\wsl.localhost\...); URLs pass through
+    [ -e "$target" ] && target=$(wslpath -w "$target")
+    "$explorer" "$target"
+done
+exit 0  # explorer.exe exits 1 even when it succeeds
