@@ -68,6 +68,8 @@ apt_install() {
             || missing+=("$pkg")
     done
     ((${#missing[@]})) || return 0
+    # for testing installers without sudo
+    if [[ -n ${WSL2DEV_SKIP_APT:-} ]]; then say "  skipping apt (WSL2DEV_SKIP_APT): ${missing[*]}"; return 0; fi
     if ((DRY_RUN)); then say "  would install with apt: ${missing[*]}"; return 0; fi
     [[ -t 0 ]] || die "missing packages: ${missing[*]} (run: sudo apt install ${missing[*]})"
     read -rp "  Install ${missing[*]} with sudo apt? [Y/n] " answer
