@@ -22,12 +22,12 @@ they're put together.
 | Module | What it does |
 |--------|--------------|
 | [`windows-integration`](modules/windows-integration/) | Open URLs, files and folders in Windows (`winopen`, `open`, `BROWSER`), and `pbcopy`/`pbpaste` for the Windows clipboard |
+| [`ssh-agent`](modules/ssh-agent/) | One SSH agent for every shell (keychain): type your key's passphrase once per WSL session |
 
 Planned, one at a time:
 
 | Module | What it does |
 |--------|--------------|
-| `ssh-agent` | One SSH agent for every shell (keychain): type your key's passphrase once per WSL session |
 | `cli-tools` | bat, lsd, eza, ripgrep and glow, with aliases |
 | `zsh` | oh-my-zsh with a curated plugin set, autosuggestions and larger, de-duplicated history |
 | `fzf` | fzf with ripgrep for file search, bat previews and fzf-tab completion |
