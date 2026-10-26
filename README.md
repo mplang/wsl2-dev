@@ -28,12 +28,12 @@ they're put together.
 | [`oh-my-zsh`](modules/oh-my-zsh/) | oh-my-zsh with a small plugin set, your own `local.zsh`, and optionally powerlevel10k |
 | [`fzf`](modules/fzf/) | Fuzzy search for files (Ctrl-T), history (Ctrl-R) and directories (Alt-C) with previews; fzf-tab completion menus in zsh |
 | [`git`](modules/git/) | WSL-friendly git settings (LF line endings, `zdiff3` conflicts, rebasing pulls, ...), VS Code as diff/merge tool, Windows' Git Credential Manager for HTTPS |
+| [`tmux`](modules/tmux/) | tmux for Windows Terminal: `Ctrl-Space` prefix, mouse, copies to the Windows clipboard, a themeable status bar, plugins via TPM |
 
 Planned, one at a time:
 
 | Module | What it does |
 |--------|--------------|
-| `tmux` | A tmux config: `Ctrl-Space` prefix, mouse, clipboard to Windows (OSC 52), plugins via TPM, status bar |
 | `vim` | A vim config and plugin set (vim-plug) |
 | `vim-coc` | Language-server completion in vim with CoC (needs `vim` and node) |
 | `python-uv` | Python projects with uv; direnv activates each project's `.venv` |

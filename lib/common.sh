@@ -15,6 +15,7 @@ TAG="wsl2-dev:$MODULE"
 
 DRY_RUN=0
 UNINSTALL=0
+declare -A _CREATED=()   # files this run created: nothing of the user's to back up
 
 usage() {
     sed -n '2,/^$/{s/^# \{0,1\}//;p}' "${BASH_SOURCE[2]:-$0}"
@@ -89,7 +90,7 @@ apt_install() {
 
 # backup_once FILE: keep the original as FILE.wsl2-dev.bak (first change only)
 backup_once() {
-    [[ -e $1 && ! -e $1.wsl2-dev.bak ]] || return 0
+    [[ -e $1 && ! -e $1.wsl2-dev.bak && -z ${_CREATED[$1]:-} ]] || return 0
     step "back up $(pretty "$1") to $(pretty "$1").wsl2-dev.bak" cp -p "$1" "$1.wsl2-dev.bak"
 }
 
@@ -186,6 +187,7 @@ add_hook() {
     elif [[ -n $rest ]]; then
         step "$verb $(pretty "$file")" _write "$file" "$rest"$'\n\n'"$block"
     else
+        [[ -e $file ]] || _CREATED[$file]=1
         step "$verb $(pretty "$file")" _write "$file" "$block"
     fi
 }
