@@ -3,8 +3,10 @@
 Guides and small, independent tooling modules for developing on
 [WSL2](https://learn.microsoft.com/windows/wsl/about) with Ubuntu.
 
-Take what you want and skip the rest: no module requires another. If you
-don't use vim, nothing here touches vim.
+Take what you want and skip the rest. No module requires another (except
+`vim-coc`, which builds on `vim`), and none changes a tool you didn't
+install a module for. For example, unless you install the `vim` module,
+nothing here edits your `~/.vimrc` or adds vim plugins.
 
 ## Guides
 
