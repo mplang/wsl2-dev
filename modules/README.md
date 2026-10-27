@@ -1,7 +1,9 @@
 # Modules
 
 Every module is self-contained: install any subset, in any order, and remove
-any one without affecting the others.
+any one without affecting the others. The one exception is `vim-coc`, which
+builds on `vim`: install `vim` first, and removing `vim` leaves `vim-coc`'s
+files unused.
 
 ## Layout
 
