@@ -332,7 +332,7 @@ For JavaScript/TypeScript work, install Node.js with [nvm](https://github.com/nv
 
 ```bash
 # Install nvm (check the repo for the latest version string).
-curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.8/install.sh | bash
 
 # The installer appends its setup to ~/.zshrc. Restart your shell
 # (or `source ~/.zshrc`), then:

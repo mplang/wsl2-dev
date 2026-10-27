@@ -13,6 +13,7 @@ nothing here edits your `~/.vimrc` or adds vim plugins.
 | Guide | For |
 |-------|-----|
 | [Developing on WSL2 (Ubuntu)](guides/developer-guide.md) | Installing WSL2, the filesystem, Windows interop, VS Code, git and SSH, Node, Java and Python, troubleshooting, and notes for people coming from macOS; with pointers to the modules below |
+| [Developing on WSL2 (Ubuntu), standalone](guides/developer-guide-standalone.md) | The same guide with no references to this repository, to share or copy on its own |
 | [Developing on WSL2: The Short Version](guides/developer-guide-lean.md) | The same path in half the length: just the steps and the warnings that matter |
 
 ## Modules
