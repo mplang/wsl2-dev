@@ -2,7 +2,7 @@
 
 [Windows Subsystem for Linux](https://learn.microsoft.com/windows/wsl/about) 2 ("WSL2") lets you run a full Linux environment directly on Windows: no dual-booting, no manually provisioned virtual machines. For developers, it means you get Linux-native toolchains, package managers, and runtimes while keeping the Windows desktop you already work in.
 
-This guide walks through installing WSL2, configuring it sensibly, wiring up VS Code, and setting up common development stacks (Git, Node.js, Java/Kotlin, Python).
+This guide walks through installing WSL2, configuring it sensibly, wiring up VS Code, and setting up common development stacks (Git, Node.js, Java/Kotlin, Python, Docker), and keeping your distro backed up and current.
 
 > **Ready-made setups.** Throughout the guide, **Module** notes point to this repository's [modules](../modules/), which automate a step or go a bit further. Each one is optional and independent; take the ones you want.
 
@@ -64,23 +64,74 @@ wsl --list --verbose          # Installed distros, their state, and WSL version 
 2. Set **Default profile** to **Ubuntu**.
 3. Select the **Ubuntu** profile → **General** → set **Starting directory**. By default Terminal drops you in your Windows home folder (mounted at `/mnt/c/Users/<you>`), which you want to avoid for real work. Set it to your Linux home:
    - Either clear the field so it uses the distro default, or
-   - Set it explicitly to `\\wsl$\Ubuntu\home\<your-linux-username>`.
+   - Set it explicitly to `\\wsl.localhost\Ubuntu\home\<your-linux-username>`.
 
 > **Module:** [`theme`](../modules/theme/) switches Windows Terminal's color scheme together with your shell, tmux and vim colors in one command (Gruvbox, Tomorrow Night, Modus Vivendi).
 
 ---
 
-## 4. Configure Resource Usage (Optional)
+## 4. Configure WSL (Optional)
 
-Windows manages WSL2's resources automatically, but on resource-constrained machines WSL2 can be greedier than you'd like. You can cap it with a `.wslconfig` file in your **Windows** home folder (e.g., `C:\Users\<you>\.wslconfig`):
+WSL works without any configuration, but two files let you change how it behaves:
+
+| File | Where | Applies to |
+|------|-------|------------|
+| `.wslconfig` | your **Windows** home folder, e.g. `C:\Users\<you>\.wslconfig` | the WSL virtual machine, so every distro |
+| `/etc/wsl.conf` | inside the distro (edit with `sudo`) | that distro only |
+
+Changes take effect the next time WSL starts: run `wsl --shutdown` in **PowerShell**, then reopen Ubuntu. On Windows 11, the **WSL Settings** app (in the Start menu) edits `.wslconfig` for you and explains each setting.
+
+### `.wslconfig`: resources, networking, and disk
+
+Windows manages WSL2's resources automatically, but on resource-constrained machines WSL2 can be greedier than you'd like. A reasonable starting point:
 
 ```ini
 [wsl2]
+# Cap WSL's memory and CPUs (defaults: half of Windows' memory, all CPUs)
 memory=8GB
 processors=4
+# Share Windows' network interfaces (Windows 11 22H2 or later; see below)
+networkingMode=mirrored
+
+[experimental]
+# New virtual disks give space back to Windows when you delete files
+sparseVhd=true
 ```
 
-Adjust the values to suit your hardware. Apply changes by restarting WSL (see [Troubleshooting](#11-troubleshooting-tips-and-tricks)).
+- **`memory` and `processors`:** adjust to your hardware.
+- **`networkingMode=mirrored`** gives Linux the same network interfaces as Windows instead of a separate virtual network. `localhost` then works reliably in both directions, IPv6 works, other devices on your network can reach a server running in WSL (you may need a Windows Firewall rule), and many VPNs that break WSL's default networking start working. If you have no networking trouble, the default (`nat`) is fine.
+- **`sparseVhd=true`** affects only distros created after you set it. For an existing one, see [Reclaiming disk space](#reclaiming-disk-space).
+
+### `/etc/wsl.conf`: per-distro settings
+
+```bash
+sudo nano /etc/wsl.conf
+```
+
+Ubuntu's file already has a few lines; keep them, and add the sections you want:
+
+```ini
+[boot]
+# Already set on recent Ubuntu installs; services such as Docker Engine need it
+systemd=true
+
+[automount]
+# Let chmod and chown work on Windows files under /mnt/c
+options="metadata"
+
+[interop]
+# Keep Windows' PATH out of Linux's PATH (see below)
+appendWindowsPath=false
+```
+
+- **`systemd`** runs Linux's normal service manager, so services start the way they do on any Ubuntu machine. `ps -p 1 -o comm=` prints `systemd` when it's on.
+- **`metadata`:** without it, every file under `/mnt/c` shows the same permissions and `chmod` silently does nothing. You only need it if you keep files on the Windows side (which §5 advises against for code).
+- **`appendWindowsPath=false`:** WSL normally appends every directory on your Windows `PATH` to Linux's. That's what makes `code` and `explorer.exe` work, but it also makes every failed command lookup (tab completion, typos, zsh's command suggestions) search all of those Windows directories, which is slow. If your shell feels sluggish, turn it off and add back only the Windows directories you use, in `~/.zshrc`:
+
+  ```bash
+  # VS Code's default per-user install location, plus explorer.exe, clip.exe, cmd.exe and powershell.exe
+  export PATH="$PATH:/mnt/c/Users/<you>/AppData/Local/Programs/Microsoft VS Code/bin:/mnt/c/Windows:/mnt/c/Windows/System32:/mnt/c/Windows/System32/WindowsPowerShell/v1.0"
+  ```
 
 ---
 
@@ -94,14 +145,14 @@ WSL2 gives each distribution its own native Linux **ext4** filesystem inside a v
 
 ### Crossing the divide
 
-- **Access Linux files from Windows:** use the `\\wsl$` network path, e.g. `\\wsl$\Ubuntu\home\<your-linux-username>`. You can also run `explorer.exe .` from inside a Linux directory to open it in Windows Explorer.
+- **Access Linux files from Windows:** use the `\\wsl.localhost` network path, e.g. `\\wsl.localhost\Ubuntu\home\<your-linux-username>` (the older `\\wsl$` form works too). Pin it to **Quick access** in Explorer for one-click access. You can also run `explorer.exe .` from inside a Linux directory to open it in Windows Explorer.
 - **Access Windows files from Linux:** your `C:` drive is mounted at `/mnt/c`, so everything on Windows is reachable from Linux.
 
 ### Why location matters for performance
 
-Crossing the Windows/Linux boundary goes through a translation layer. Working on files stored under `/mnt/c` **from Linux** (or on `\\wsl$` files **from Windows tools**) is dramatically slower, and for large, many-file operations like `git status` or `npm install`, it can be unacceptably slow. Keeping your repos on the native Linux filesystem avoids this entirely.
+Crossing the Windows/Linux boundary goes through a translation layer. Working on files stored under `/mnt/c` **from Linux** (or on `\\wsl.localhost` files **from Windows tools**) is dramatically slower, and for large, many-file operations like `git status` or `npm install`, it can be unacceptably slow. Keeping your repos on the native Linux filesystem avoids this entirely.
 
-> **Caution:** Avoid using Windows applications to *write* to the `\\wsl$` filesystem. A Windows-native Git client operating on Linux-backed files, for example, is likely to cause problems. Read-only Windows tools are generally fine, but your mileage may vary.
+> **Caution:** Avoid using Windows applications to *write* to the `\\wsl.localhost` filesystem. A Windows-native Git client operating on Linux-backed files, for example, is likely to cause problems. Read-only Windows tools are generally fine, but your mileage may vary.
 
 ### A few Linux basics
 
@@ -308,12 +359,18 @@ You're now set to clone repositories. Put them somewhere under `~` (e.g., `~/rep
 
 ## 10. Development Stacks
 
-### 10.1 Keeping Ubuntu Up to Date
+### 10.1 Keeping Ubuntu and WSL Up to Date
 
 System and package updates in Ubuntu are straightforward. Run periodically (enter your password if prompted):
 
 ```bash
 sudo apt update && sudo apt upgrade -y
+```
+
+WSL itself (its kernel and the `wsl` command) updates separately. Check for updates from **PowerShell** now and then:
+
+```powershell
+wsl --update
 ```
 
 ### 10.2 Homebrew (Optional)
@@ -389,9 +446,157 @@ uv run python                                      # Run something in the projec
 
 > **Module:** [`python-uv`](../modules/python-uv/) installs uv and direnv, so a project's `.venv` is synced and activated automatically when you `cd` into it.
 
+### 10.6 GPU Computing (CUDA)
+
+WSL2 can use your Windows machine's NVIDIA GPU for CUDA work such as machine learning, but the setup differs from a regular Linux machine:
+
+- Install or update the NVIDIA driver **on Windows** only. WSL makes it available to Linux automatically; `nvidia-smi` in Ubuntu should list your GPU.
+- **Never install an NVIDIA Linux driver inside WSL.** It replaces the one WSL provides and breaks GPU access.
+- If you need the CUDA toolkit, follow NVIDIA's [CUDA on WSL guide](https://docs.nvidia.com/cuda/wsl-user-guide/): use its **WSL-Ubuntu** installer or a `cuda-toolkit-*` package, never the `cuda` or `cuda-drivers` packages, which bring a driver with them. Many frameworks (PyTorch, for example) ship their own CUDA libraries, so you may not need the toolkit at all.
+
 ---
 
-## 11. Troubleshooting, Tips, and Tricks
+## 11. Docker
+
+There are two good ways to run Docker with WSL2. Both give you the same `docker` and `docker compose` commands in your Ubuntu shell; they differ in where the engine runs and what it costs.
+
+| | Docker Desktop | Docker Engine in WSL |
+|-|----------------|----------------------|
+| What it is | A Windows app that runs the engine in its own WSL distro and connects your distros to it | Docker's Linux packages, installed directly in your Ubuntu distro |
+| Cost | Free for personal use, education, non-commercial open source, and small businesses; larger companies need a [paid subscription](https://www.docker.com/pricing/) | Free and open source |
+| Extras | Dashboard GUI, Kubernetes, extensions, Windows containers, automatic updates | The engine and command-line tools; updates come with `apt` |
+| Across distros | One engine, with the same images and containers, serves every distro you enable | Each distro has its own engine, images, and containers |
+| Overhead | Its own background processes and distro | Only what Docker itself uses |
+
+**Which to choose:** if your organization provides Docker Desktop, or you want the GUI or Kubernetes, use Docker Desktop. If you only need containers from the command line, or Docker Desktop's license doesn't fit, Docker Engine in WSL is lighter and free. Either way, **use one per distro**: Docker Desktop's integration and a Docker Engine installed in the same distro conflict.
+
+### Option A: Docker Desktop
+
+1. Install [Docker Desktop for Windows](https://docs.docker.com/desktop/setup/install/windows-install/) and keep the **WSL 2** backend it offers (the default).
+2. In Docker Desktop → **Settings → Resources → WSL Integration**, turn on integration for your distro (it's on for your default distro already) and click **Apply**.
+3. Open a new Ubuntu terminal and check:
+
+   ```bash
+   docker run hello-world
+   ```
+
+Docker Desktop must be running for `docker` to work in WSL. If the command is missing or can't connect, check that Docker Desktop is running and that integration is on for this distro. `wsl --shutdown` also stops Docker Desktop's engine and all its containers; Docker Desktop offers to restart it.
+
+### Option B: Docker Engine in WSL
+
+Docker Engine runs as a system service, so it needs systemd, which recent Ubuntu installs have on by default (see [§4](#etcwslconf-per-distro-settings); `ps -p 1 -o comm=` should print `systemd`).
+
+Install it from Docker's own apt repository. These steps follow Docker's [Ubuntu instructions](https://docs.docker.com/engine/install/ubuntu/); check there for changes. (Ubuntu's own `docker.io` package works too, but lags behind.)
+
+```bash
+# Remove conflicting packages, if any are installed
+for pkg in docker.io docker-doc docker-compose docker-compose-v2 podman-docker containerd runc; do sudo apt remove $pkg; done
+
+# Add Docker's repository
+sudo apt update
+sudo apt install ca-certificates curl
+sudo install -m 0755 -d /etc/apt/keyrings
+sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+sudo chmod a+r /etc/apt/keyrings/docker.asc
+sudo tee /etc/apt/sources.list.d/docker.sources <<EOF
+Types: deb
+URIs: https://download.docker.com/linux/ubuntu
+Suites: $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}")
+Components: stable
+Architectures: $(dpkg --print-architecture)
+Signed-By: /etc/apt/keyrings/docker.asc
+EOF
+sudo apt update
+
+# Install Docker Engine, the CLI, Buildx, and Compose
+sudo apt install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+```
+
+To use `docker` without `sudo`, add yourself to the `docker` group, then open a new terminal (or run `newgrp docker`):
+
+```bash
+sudo usermod -aG docker $USER
+docker run hello-world    # Verify
+```
+
+> **Security:** membership in the `docker` group is equivalent to root access in this distro. That's usually acceptable on a personal development machine, but it's worth knowing.
+
+Docker starts with the distro, and containers run only while the distro does: `wsl --shutdown` stops them. Ports you publish (`docker run -p 8080:80 ...`) are reachable from Windows at `http://localhost:8080`.
+
+### Either way
+
+- Keep project files, and anything you bind-mount into a container (`-v ./src:/app`), on the Linux filesystem (§5). Mounting from `/mnt/c` is slow.
+- VS Code's **Dev Containers** extension works with both options.
+- Images, containers, and volumes take up disk space: `docker system df` shows how much, and `docker system prune` removes what's unused. To give the space back to Windows, see [Reclaiming disk space](#reclaiming-disk-space).
+
+---
+
+## 12. Back Up, Move, and Upgrade Your Distro
+
+### Back up
+
+Windows backup tools such as OneDrive and File History cover your Windows folders, **not your Linux files**: the whole distro lives in a single virtual disk file under `AppData`, which they don't include. Push your code to a remote often, and take an occasional full snapshot from **PowerShell**:
+
+```powershell
+wsl --shutdown
+wsl --export Ubuntu D:\Backups\ubuntu-backup.tar
+```
+
+To restore, import the backup as a new distro (choose any name and folder):
+
+```powershell
+wsl --import Ubuntu-restored D:\WSL\Ubuntu-restored D:\Backups\ubuntu-backup.tar
+wsl -d Ubuntu-restored
+```
+
+If the restored distro signs you in as `root`, set your user with `wsl --manage Ubuntu-restored --set-default-user <your-linux-username>`.
+
+### Move to another drive
+
+A distro's virtual disk lives on `C:` by default. To move it, from **PowerShell**:
+
+```powershell
+wsl --shutdown
+wsl --manage Ubuntu --move D:\WSL\Ubuntu
+```
+
+If `--move` isn't recognized, run `wsl --update` first.
+
+### Upgrade to a new Ubuntu release
+
+There are two ways. Take a backup first either way.
+
+**In place.** This upgrades the distro you have; everything stays where it is:
+
+```bash
+sudo apt update && sudo apt full-upgrade -y
+sudo do-release-upgrade
+```
+
+An LTS release is offered the next LTS once that release's first point update (e.g. 26.04.1) is out.
+
+**Side by side.** Install the new release as a separate distro, move in, and remove the old one when you no longer need it. It takes longer, but you start clean and the old distro stays available as a fallback. From **PowerShell**:
+
+```powershell
+wsl --list --online             # Find the new release's name
+wsl --install -d Ubuntu-26.04
+```
+
+Then, in the **new** distro, copy what you need straight from the old one (here named `Ubuntu`; `wsl.exe --list` shows the names):
+
+```bash
+wsl.exe -d Ubuntu --cd '~' -- tar -c .ssh .gitconfig | tar -C ~ -x
+```
+
+Add any other files or folders to the list. For repositories, push everything from the old distro and clone fresh, or copy them the same way. Make the new distro your default in Windows Terminal (§3) and for the `wsl` command (`wsl --set-default Ubuntu-26.04`). When you're sure you have everything, remove the old one:
+
+```powershell
+wsl --unregister Ubuntu         # Permanently deletes the distro and all its files
+```
+
+---
+
+## 13. Troubleshooting, Tips, and Tricks
 
 ### Restart WSL2
 
@@ -405,10 +610,6 @@ wsl --shutdown
 
 Relaunch Ubuntu from the Start menu or Windows Terminal to bring it back up.
 
-### Docker
-
-If you want Docker inside WSL2, the simplest path is **Docker Desktop** with WSL2 integration enabled (Docker Desktop → **Settings → Resources → WSL Integration**). If you hit Docker-related issues, first confirm Docker Desktop is running and that integration is enabled for your distro.
-
 ### Reclaiming disk space
 
 The WSL2 virtual disk grows as you use it but does not automatically shrink. If it's consuming too much space after you've deleted large files, you can compact it. Shut WSL down first (`wsl --shutdown`), then from an elevated PowerShell:
@@ -416,6 +617,8 @@ The WSL2 virtual disk grows as you use it but does not automatically shrink. If 
 ```powershell
 wsl --manage Ubuntu --set-sparse true
 ```
+
+To see what's using the space, `sudo apt install ncdu` and run `ncdu ~` (or `docker system df` for Docker's share).
 
 For older WSL builds, you can compact the `.vhdx` manually with `diskpart`'s `compact vdisk` — search Microsoft's docs for your version if the command above isn't available.
 
@@ -426,13 +629,15 @@ For older WSL builds, you can compact the `.vhdx` manually with `diskpart`'s `co
 | WSL feels broken or hung | `wsl --shutdown`, then relaunch |
 | `.wslconfig` changes not applied | `wsl --shutdown`, then relaunch |
 | Distro won't start / corrupted | `wsl --list --verbose`, then `wsl --terminate <distro>` |
-| `code .` not found | Run once from the Windows side, or reinstall the WSL extension |
+| `code .` not found | Run once from the Windows side, or reinstall the WSL extension; if you set `appendWindowsPath=false`, add VS Code to `PATH` (§4) |
 | Slow Git/npm/builds | Confirm your repo is under `~`, **not** under `/mnt/c` |
 | Need to see WSL/kernel versions | `wsl --version` |
+| No network or DNS inside WSL, often on a VPN | Try `networkingMode=mirrored` ([§4](#wslconfig-resources-networking-and-disk)), then `wsl --shutdown` |
+| `docker` not found or can't connect | See [§11](#11-docker) for your setup |
 
 ---
 
-## 12. Coming from macOS
+## 14. Coming from macOS
 
 If you've spent years on a Mac, WSL2 Ubuntu will feel *almost* like home – which is exactly what makes the differences sneaky. macOS and Linux are both Unix-like, so most of your instincts transfer, but a handful of details will bite you. Here's the translation table.
 
@@ -500,11 +705,15 @@ SSH keys, `git`, Node/nvm, SDKMAN!, Docker workflows, and the general Unix shell
 
 ---
 
-## 13. Further Reading
+## 15. Further Reading
 
 - WSL documentation: <https://learn.microsoft.com/windows/wsl/>
 - WSL basic commands reference: <https://learn.microsoft.com/windows/wsl/basic-commands>
 - VS Code in WSL: <https://code.visualstudio.com/docs/remote/wsl>
+- WSL configuration (`.wslconfig`, `wsl.conf`): <https://learn.microsoft.com/windows/wsl/wsl-config>
+- Docker Desktop's WSL 2 backend: <https://docs.docker.com/desktop/features/wsl/>
+- Docker Engine on Ubuntu: <https://docs.docker.com/engine/install/ubuntu/>
+- CUDA on WSL: <https://docs.nvidia.com/cuda/wsl-user-guide/>
 - Homebrew on Linux: <https://docs.brew.sh/Homebrew-on-Linux>
 - SDKMAN!: <https://sdkman.io/>
 - nvm: <https://github.com/nvm-sh/nvm>

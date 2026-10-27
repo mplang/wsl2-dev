@@ -70,7 +70,7 @@ Rules:
    directly, without the tooling. Currently:
    - §9 (GitHub over SSH): the `keychain` tip, for one ssh-agent across
      terminals;
-   - §12 (Clipboard and "open"): `pbcopy`/`pbpaste` **functions** in place
+   - §14 (Clipboard and "open"): `pbcopy`/`pbpaste` **functions** in place
      of the plain aliases, and the note about `explorer.exe` and Linux
      paths.
 
