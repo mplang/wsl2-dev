@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# check-guides -- show how the standalone guide differs from the full one
+#
+#   tools/check-guides
+#
+# Strips the repository-specific parts from guides/developer-guide.md
+# (the "> **Module" notes, the "Ready-made setups" note and the modules
+# line in Further Reading) and diffs the result against
+# guides/developer-guide-standalone.md. The only differences should be the
+# standalone-only passages listed in AGENTS.md. Exits 1 if there are any
+# differences, like diff.
+
+cd "$(dirname "$0")/.." || exit 2
+
+awk '
+    skip_blank && $0 == "" { skip_blank = 0; next }
+    { skip_blank = 0 }
+    /^> \*\*(Modules?:|Ready-made setups)/ { skip_blank = 1; next }
+    /^- This repository.s modules/ { next }
+    { print }
+' guides/developer-guide.md |
+    diff -u --label developer-guide.md\ \(stripped\) --label developer-guide-standalone.md \
+        - guides/developer-guide-standalone.md
