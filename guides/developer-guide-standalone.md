@@ -1,8 +1,8 @@
 # Developing on WSL2 (Ubuntu)
 
-[Windows Subsystem for Linux](https://learn.microsoft.com/windows/wsl/about) 2 ("WSL2") lets you run a full Linux environment directly on Windows: no dual-booting, no manually provisioned virtual machines. For developers, it means you get Linux-native toolchains, package managers, and runtimes while keeping the Windows desktop you already work in.
+[Windows Subsystem for Linux](https://learn.microsoft.com/windows/wsl/about) 2 ("WSL2") lets you run a full Linux environment directly on Windows without dual-booting or manually provisioned virtual machines. 
 
-This guide walks through installing WSL2, configuring it sensibly, wiring up VS Code, and setting up common development stacks (Git, Node.js, Java/Kotlin, Python, Docker), and keeping your distro backed up and current.
+This guide walks through installing WSL2, setting sensible configurations, installing common development tooling (VS Code, Git, Node.js, Java/Kotlin, Python, Docker), and performing important maintenance tasks.
 
 > **Conventions in this guide**
 > - Commands prefixed with nothing are run in your **Ubuntu** shell.
@@ -22,13 +22,13 @@ This guide walks through installing WSL2, configuring it sensibly, wiring up VS 
 
 ## 2. Install WSL2
 
-Modern WSL installs with a single command. Open **PowerShell as Administrator** and run:
+WSL installs with a single command. Open **PowerShell as Administrator** and run:
 
 ```powershell
 wsl --install
 ```
 
-This enables the required Windows features, installs the WSL2 kernel, sets WSL2 as the default version, and installs **Ubuntu** (the default distribution). **Reboot when prompted.**
+This enables the required Windows features, installs the WSL2 kernel,  and installs **Ubuntu** (the default distribution). **Reboot when prompted.**
 
 After rebooting, Ubuntu will launch (or launch it from the Start menu) and prompt you to create a **Linux username and password**. This account is separate from your Windows account; the password is what you'll use for `sudo`.
 
@@ -60,7 +60,7 @@ wsl --list --verbose          # Installed distros, their state, and WSL version 
 
 1. Open Windows Terminal → **Settings** (`Ctrl+,`).
 2. Set **Default profile** to **Ubuntu**.
-3. Select the **Ubuntu** profile → **General** → set **Starting directory**. By default Terminal drops you in your Windows home folder (mounted at `/mnt/c/Users/<you>`), which you want to avoid for real work. Set it to your Linux home:
+3. Select the **Ubuntu** profile → **General** → set **Starting directory**. Terminal may drop you in your Windows home folder (mounted at `/mnt/c/Users/<you>`), which you want to avoid for real work. Set it to your Linux home:
    - Either clear the field so it uses the distro default, or
    - Set it explicitly to `\\wsl.localhost\Ubuntu\home\<your-linux-username>`.
 
@@ -72,14 +72,14 @@ WSL works without any configuration, but two files let you change how it behaves
 
 | File | Where | Applies to |
 |------|-------|------------|
-| `.wslconfig` | your **Windows** home folder, e.g. `C:\Users\<you>\.wslconfig` | the WSL virtual machine, so every distro |
+| `.wslconfig` | your **Windows** home folder, e.g. `C:\Users\<you>\.wslconfig` | all installed WSL distros globally |
 | `/etc/wsl.conf` | inside the distro (edit with `sudo`) | that distro only |
 
 Changes take effect the next time WSL starts: run `wsl --shutdown` in **PowerShell**, then reopen Ubuntu. On Windows 11, the **WSL Settings** app (in the Start menu) edits `.wslconfig` for you and explains each setting.
 
 ### `.wslconfig`: resources, networking, and disk
 
-Windows manages WSL2's resources automatically, but on resource-constrained machines WSL2 can be greedier than you'd like. A reasonable starting point:
+Windows manages WSL2's resources automatically, but on resource-constrained machines WSL2 can be greedier than you'd like. Here are some settings that might help:
 
 ```ini
 [wsl2]
@@ -108,7 +108,7 @@ Ubuntu's file already has a few lines; keep them, and add the sections you want:
 
 ```ini
 [boot]
-# Already set on recent Ubuntu installs; services such as Docker Engine need it
+# Already set on recent Ubuntu installs; services like Docker need it
 systemd=true
 
 [automount]
@@ -120,9 +120,8 @@ options="metadata"
 appendWindowsPath=false
 ```
 
-- **`systemd`** runs Linux's normal service manager, so services start the way they do on any Ubuntu machine. `ps -p 1 -o comm=` prints `systemd` when it's on.
-- **`metadata`:** without it, every file under `/mnt/c` shows the same permissions and `chmod` silently does nothing. You only need it if you keep files on the Windows side (which §5 advises against for code).
-- **`appendWindowsPath=false`:** WSL normally appends every directory on your Windows `PATH` to Linux's. That's what makes `code` and `explorer.exe` work, but it also makes every failed command lookup (tab completion, typos, zsh's command suggestions) search all of those Windows directories, which is slow. If your shell feels sluggish, turn it off and add back only the Windows directories you use, in `~/.zshrc`:
+- **`options=metadata`:** Only necessary if youe need WSL to modify and read custom Linux permission bits on your Windows files.
+- **`appendWindowsPath=false`:** WSL normally appends every directory on your Windows `PATH` to your Linux `PATH`. That's what makes `code` and `explorer.exe` work, but it also makes every failed command lookup (tab completion, typos, zsh's command suggestions) search all of those Windows directories, which is slow. If your shell feels sluggish, turn it off and add back only the Windows directories you use, in `~/.zshrc`:
 
   ```bash
   # VS Code's default per-user install location, plus explorer.exe, clip.exe, cmd.exe and powershell.exe
@@ -165,11 +164,11 @@ The directory separator in Linux is the forward slash (`/`).
 
 ## 6. Orienting Yourself in Linux
 
-If you're comfortable developing but new to Linux (or haven't lived in it day-to-day), here's the quick translation of concepts you already know into their Ubuntu forms.
+If you're new to Linux, or need a brief refresher of some important Ubuntu concepts, read on.
 
 ### The mental model
 
-- Your shell is **Bash** out of the box – the command interpreter, analogous to PowerShell or `cmd` but with a different (POSIX) command vocabulary. This guide switches to **zsh** (see [Standardize on zsh](#standardize-on-zsh-recommended) below), a drop-in-compatible shell with better interactive ergonomics.
+- Your shell is **Bash** out of the box – the command interpreter, analogous to PowerShell or `cmd` but with a different command vocabulary. This guide switches to **zsh** (see [Standardize on zsh](#standardize-on-zsh-recommended) below), a drop-in-compatible shell with better interactive ergonomics.
 - There is **no "Program Files" and no per-app installer wizard** for most things. You install software through a **package manager**, `apt`, which resolves dependencies and keeps everything updatable from one place.
 - `apt` operations that modify the system require **root** privileges, so you prefix them with `sudo` ("do as superuser"). You'll be asked for the Linux password you created at setup, not your Windows password.
 
@@ -194,7 +193,7 @@ You likely know the equivalents; these are the names and the flags worth memoriz
 | `man <command>` | Read the manual | The authoritative reference for any command |
 | `<command> --help` | Quick usage | Shorter than `man` for most tools |
 
-A few shell ergonomics: **Tab** completes paths and commands; **Ctrl+R** searches your command history; **Ctrl+C** interrupts the running process; **Ctrl+L** (or `clear`) clears the screen; the up/down arrows walk history.
+A few shell shortcuts/commands: **Tab** completes paths and commands; **Ctrl+R** searches your command history; **Ctrl+C** interrupts the running process; **Ctrl+L** (or `clear`) clears the screen; the up/down arrows walk history.
 
 ### Standardize on zsh (recommended)
 
